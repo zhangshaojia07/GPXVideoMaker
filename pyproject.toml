@@ -1,0 +1,16 @@
+[project]
+name = "gpxvideomaker"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "coord-convert>=0.2.1",
+    "gpxpy>=1.6.2",
+    "matplotlib>=3.10.8",
+    "mercantile>=1.2.1",
+    "numpy>=2.4.1",
+    "pytz>=2025.2",
+    "requests>=2.32.5",
+    "rich>=14.2.0",
+]
