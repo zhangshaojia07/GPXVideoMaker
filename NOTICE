@@ -1,0 +1,21 @@
+GPX Video Maker - Third-Party Notices
+=====================================
+
+本文件记录了项目中使用的第三方资产及相关授权说明。
+
+1. fonts/Renogare-Regular.otf
+-----------------------------
+* 作者/来源: https://www.creativefabrica.com/product/renogare/
+* 授权: Free for personal use. Commercial use requires a paid license.
+
+2. graphics/strawberryCountBG.png
+---------------------------------
+* 来源: 游戏《Celeste》(Extremely OK Games)
+* 授权: 版权归 Extremely OK Games 所有。本仓库仅用于技术演示，严禁商用。
+
+3. graphics/gps_*.png
+---------------------
+* 来源: https://gitcode.com/open-source-toolkit/c49c0
+* 授权: Licensed under the MIT License
+
+感谢以上创作者提供的优秀素材。
