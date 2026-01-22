@@ -89,3 +89,11 @@ python main.py
 - [ ] 预览渲染
 - [x] 攥写 `requirements.txt`
 - [ ] 添加英文版 README
+
+## 📜 版权与授权声明
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Assets: NOTICE](https://img.shields.io/badge/Assets-NOTICE-blue.svg)](NOTICE)
+
+本项目代码采用 **[MIT 协议](LICENSE)** 开源。
+项目涉及的第三方字体及游戏素材版权信息详见 **[版权声明文件 (NOTICE)](NOTICE)**。

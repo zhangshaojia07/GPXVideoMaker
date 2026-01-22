@@ -1,7 +1,10 @@
 [project]
 name = "gpxvideomaker"
 version = "0.1.0"
-description = "Add your description here"
+description = "GPX to Animated Map Track MP4 Generator"
+authors = [
+    { name = "Shaojia" }
+]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -14,3 +17,4 @@ dependencies = [
     "requests>=2.32.5",
     "rich>=14.2.0",
 ]
+license-files = ["LICENSE", "NOTICE"]
