@@ -2,12 +2,14 @@ import requests, time
 from pathlib import Path
 from requests.exceptions import RequestException, HTTPError, Timeout
 from dataclasses import dataclass
-from utils import prepare_dir
+from utils import *
 from PIL import Image
 import mercantile as mtl
 from rich.progress import track
 
-map_tiles_dir=prepare_dir(Path(r"map_tiles"))
+map_tiles_dir=prepare_dir(Path("map_tiles"))
+
+map_tile_default = Image.open("graphics/map_tile_default.png")
 
 # https://blog.csdn.net/ChatGIS/article/details/144867297
 
@@ -109,5 +111,10 @@ def preload_tiles(tiles:list[MapTile]):
     for tile in tiles:
         tile_dict[tile.key]=Image.open(map_tiles_dir / f"{tile.key}.png")
 
-def load_tile(tile):
-    return tile_dict[tile.key]
+def load_tile(tile,show_warning=True):
+    if tile.key in tile_dict:
+        return tile_dict[tile.key]
+    else:
+        if show_warning:
+            warn(f"未能成功从本地文件加载地图瓦片 {tile.key}，使用默认瓦片填充")
+        return map_tile_default

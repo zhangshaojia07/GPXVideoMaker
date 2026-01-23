@@ -6,14 +6,14 @@ from numpy import sin,pi
 from mercantile import Tile
 from datetime import datetime,timedelta
 
-StrawberryCountBG = Image.open(r"graphics\strawberryCountBG.png")
+StrawberryCountBG = Image.open("graphics/strawberryCountBG.png")
 StrawberryCountBG_w, StrawberryCountBG_h = StrawberryCountBG.size
 StrawberryCountBG_resized=StrawberryCountBG.resize((StrawberryCountBG_w//2,StrawberryCountBG_h//2),Image.Resampling.NEAREST)
-font_file = r"fonts\Renogare-Regular.otf"
-gps_icon = Image.open(r"graphics\gps_icon@2x.png")
+font_file = "fonts/Renogare-Regular.otf"
+gps_icon = Image.open("graphics/gps_icon@2x.png")
 gps_icon_rot = [gps_icon.rotate(ang,Image.Resampling.BICUBIC) for ang in range(360)]
-gps_no_dir = Image.open(r"graphics\gps_icon@2x_no_dir.png")
-gps_breathe = Image.open(r"graphics\gps_breathe.png")
+gps_no_dir = Image.open("graphics/gps_icon@2x_no_dir.png")
+gps_breathe = Image.open("graphics/gps_breathe.png")
 gps_breathe_sec = 3
 gps_breathe_len = int( gps_breathe_sec * FPS )
 gps_breathe_factor = [(sin(i/gps_breathe_len*2*pi)+1)*0.3+1 for i in range(gps_breathe_len)]

@@ -88,7 +88,7 @@ def extract_gpx(gpx_file):
 from rich import print,inspect
 import matplotlib.pyplot as plt
 if __name__=='__main__':
-    gpx_file=r"C:\Users\19607\Desktop\cycling\Z20260116.gpx"
+    gpx_file="debug/20260118_QingShanLake.gpx"
     seg=extract_gpx(gpx_file)
     print(len(seg.points))
     

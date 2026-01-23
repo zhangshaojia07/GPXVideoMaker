@@ -15,7 +15,7 @@ def pave_tiles_preload(width,height,ctr_px,map_style):
     tiles=[MapTile(x,y,zoom,map_style) for x in range(lt_tile.x,rb_tile.x+1) for y in range(lt_tile.y,rb_tile.y+1)]
     needed_tiles.update(tiles)
 
-def pave_tiles(img,ctr_px,map_style):
+def pave_tiles(img,ctr_px,map_style,tile_missing_warning=True):
     width,height=img.size
     zoom2=ctr_px.z
     zoom=zoom2-TX_EXP
@@ -26,7 +26,7 @@ def pave_tiles(img,ctr_px,map_style):
     tiles=[MapTile(x,y,zoom,map_style) for x in range(lt_tile.x,rb_tile.x+1) for y in range(lt_tile.y,rb_tile.y+1)]
     for tile in tiles:
         off_x,off_y=tile.x<<TX_EXP,tile.y<<TX_EXP
-        img.paste(load_tile(tile),(off_x-lt_px.x,off_y-lt_px.y))
+        img.paste(load_tile(tile,tile_missing_warning),(off_x-lt_px.x,off_y-lt_px.y))
 
 def prepare_tiles():
     tiles_to_be_downloaded=get_not_exists_tiles(needed_tiles)

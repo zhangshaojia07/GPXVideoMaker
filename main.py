@@ -24,6 +24,7 @@ def render_one_frame(
 		tm:datetime|None=None,
         # tiles
 		map_style:int|None=None,
+        tile_warning:bool=True,
         # track & icon
         traj:list[tuple[int,int]]|None=None,
         traj_vals:list[float]|None=None,
@@ -34,7 +35,7 @@ def render_one_frame(
 		dist:float|None=None,
         clock:str|None=None,
         ):
-    pave_tiles(img,ctr_px,map_style)
+    pave_tiles(img,ctr_px,map_style,tile_warning)
     overlay_track(img,ctr_px,traj,traj_vals,traj_dis,line_width=15)
     overlay_icon(img,ctr_px,ctr_px,gps_img)
     overlay_dist_time(img,dist,clock)
@@ -42,7 +43,7 @@ def render_one_frame(
 
 def main():
     if is_debug:
-        gpx_file=r"debug\20260118_QingShanLake.gpx"
+        gpx_file="debug/20260118_QingShanLake.gpx"
     else:
         while True:
             if GUI_file_selection:
@@ -115,7 +116,7 @@ def main():
     frame_no=np.ceil(vid_dur*FPS).astype(np.int64)
 
     if is_debug:
-        output_file=r"debug\output.mp4"
+        output_file="debug/output.mp4"
     else:
         while True:
             if GUI_file_selection:
@@ -169,11 +170,6 @@ def main():
              for i,tm in zip(idx_list,moments)]
     ctr_pxs=[mtl.Tile(int(np.round(x)),int(np.round(y)),zoom+TX_EXP) for x,y in gps_pos]
 
-    for ctr_px in ctr_pxs:
-        pave_tiles_preload(img_w,img_h,ctr_px,map_style)
-    prepare_tiles()
-    info(f"瓦片准备完毕")
-
     lists={
         'ctr_px':ctr_pxs,
         'tm':moments,
@@ -188,12 +184,25 @@ def main():
     }
     info_list = [dict(zip(lists.keys(), vals)) for vals in zip(*lists.values())]
 
+    if not is_debug:
+        info(f"预览视频：共 {preview_frame_no} 帧")
+        preview_img=Image.new("RGB",(img_w,img_h))
+        render_one_frame(preview_img,**info_list[len(info_list)//2],tile_warning=False)
+        preview_img.show()
+
+    for ctr_px in ctr_pxs:
+        pave_tiles_preload(img_w,img_h,ctr_px,map_style)
+    prepare_tiles()
+    info("瓦片准备完毕")
+
     writer=VideoWriter(output_file,(img_w,img_h))
     for fi in track(info_list,"渲染中"):
         img=Image.new("RGB",(img_w,img_h))
         render_one_frame(img,**fi)
         writer.write(np.array(img))
     writer.release()
+
+    start_file(output_file)
 
 if __name__=='__main__':
     main()

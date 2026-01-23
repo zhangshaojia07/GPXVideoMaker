@@ -6,8 +6,16 @@ from rich.markup import escape
 import numpy as np
 from datetime import datetime,timedelta
 import os
+import platform
+import subprocess
 
 console=Console(highlight=None)
+
+def info(text="Tips:等红灯其实是在等绿灯"):
+    console.print(f"[italic blue]{escape(text)}[/]")
+
+def warn(text="Tips:等红灯其实是在等绿灯"):
+    console.print(f"[italic red]{escape(text)}[/]")
 
 r'''
 In CMD:
@@ -43,6 +51,8 @@ FPS = 30
 
 track_fail_interval_sec = 3 * 60
 
+preview_frame_no = 1
+
 def prepare_dir(p: Path) -> Path:
     p.mkdir(parents=True, exist_ok=True)
     return p
@@ -64,12 +74,6 @@ def user_select(choices,prompt="请选择",default=None):
         show_default=False,
         )-1
     return idx,choices[idx],len(choices)
-
-def info(text="Tips:等红灯其实是在等绿灯"):
-    console.print(f"[italic blue]{escape(text)}[/]")
-
-def warn(text="Tips:等红灯其实是在等绿灯"):
-    console.print(f"[italic red]{escape(text)}[/]")
 
 def smooth_moving_average(vals, window_size=5):
     """简单的移动平均"""
@@ -118,6 +122,27 @@ def fmt_time(dt: datetime | None) -> str:
 
 def fmt_tim_rich(dt: datetime | None) -> str:
     return dt.astimezone(TZ).strftime("[cyan]%Y-%m-%d [bold]%H:%M[/][/]") if dt else '[cyan]--[/]'
+
+def start_file(file_path):
+
+    file_path=Path(file_path)
+
+    # 检查文件是否存在
+    if not Path.exists(file_path):
+        warn(f"错误：找不到文件 {file_path}")
+        return
+
+    sys_platform = platform.system()
+
+    if sys_platform == "Windows":
+        # Windows 专用，最简单
+        os.startfile(file_path)
+    elif sys_platform == "Darwin":
+        # macOS 指令
+        subprocess.run(["open", file_path])
+    else:
+        # Linux (如 Ubuntu) 指令
+        subprocess.run(["xdg-open", file_path])
 
 from rich import print,inspect
 if __name__=='__main__':
