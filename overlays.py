@@ -3,7 +3,7 @@ import matplotlib as plt
 import numpy as np
 from utils import FPS,square_box
 from numpy import sin,pi
-from mercantile import Tile
+import mercantile as mtl
 from datetime import datetime,timedelta
 
 StrawberryCountBG = Image.open("graphics/strawberryCountBG.png")
@@ -118,7 +118,7 @@ def overlay_speed(img:Image.Image,speed:float,color=None,offset_y:int=140):
         anchor="ms"
     )
 
-def overlay_track_color(img:Image.Image,ctr_px:Tile,traj:list[tuple[int,int]],colors:list[tuple[int,int,int]],dis:list[bool],line_width:float=9):
+def overlay_track_color(img:Image.Image,ctr_px:mtl.Tile,traj:list[tuple[int,int]],colors:list[tuple[int,int,int]],dis:list[bool],line_width:float=9):
 
     draw=ImageDraw.Draw(img)
 
@@ -132,7 +132,7 @@ def overlay_track_color(img:Image.Image,ctr_px:Tile,traj:list[tuple[int,int]],co
             draw.ellipse(square_box(p1,rad),fill=col)
             draw.ellipse(square_box(p2,rad),fill=col)
 
-def overlay_track(img:Image.Image,ctr_px:Tile,traj:list[tuple[int,int]],vals:list[float],dis:list[bool],cmap:str='viridis',line_width:float=9):
+def overlay_track(img:Image.Image,ctr_px:mtl.Tile,traj:list[tuple[int,int]],vals:list[float],dis:list[bool],cmap:str='viridis',line_width:float=9):
     
     cmap = plt.colormaps[cmap] if isinstance(cmap, str) else cmap
     colors = cmap(vals)    # (N-1, 4)  float 0-1
@@ -150,12 +150,11 @@ def get_gps_no_dir(*args,**kwargs):
 def get_gps_breathe(frame_id):
     return gps_breathe_scale[frame_id % gps_breathe_len]
 
-def overlay_icon(img:Image.Image,ctr_px:Tile,pos:tuple[int,int],icon:Image.Image):
+def overlay_icon(img:Image.Image,ctr_px:mtl.Tile,pos:tuple[int,int],icon:Image.Image):
     img_w,img_h=img.size
     icon_w,icon_h=icon.size
     img.paste(icon,(pos[0]-ctr_px.x+(img_w-icon_w)//2,pos[1]-ctr_px.y+(img_h-icon_h)//2),icon)
 
-import mercantile as mtl
 from utils import TX_EXP
 if __name__ == "__main__":
     my_img = Image.new("RGB", (1920, 1080), (255, 0, 255, 255))

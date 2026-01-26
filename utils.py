@@ -8,6 +8,7 @@ from datetime import datetime,timedelta
 import os
 import platform
 import subprocess
+import mercantile as mtl
 
 console=Console(highlight=None)
 
@@ -143,6 +144,9 @@ def start_file(file_path):
     else:
         # Linux (如 Ubuntu) 指令
         subprocess.run(["xdg-open", file_path])
+
+def lonlat2px(lonlat:list[tuple[float,float]],zoom:int):
+    return [mtl.tile(lon,lat,zoom+TX_EXP) for lon,lat in lonlat]
 
 from rich import print,inspect
 if __name__=='__main__':

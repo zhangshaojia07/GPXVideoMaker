@@ -56,6 +56,7 @@ def download_tiles(
     timeout: float | None = 10,
     retries: int = 3,
     backoff: float = 1.0,
+    description: str = "下载瓦片",
 ) -> Path:
     """
     下载单张瓦片并返回保存路径。
@@ -82,8 +83,8 @@ def download_tiles(
         用尽重试次数后仍失败。
     """
 
-    for tile in track(tiles, description="下载瓦片"):
-        url = f"https://wprd01.is.autonavi.com/appmaptile?style={tile.map_style}&x={tile.x}&y={tile.y}&z={tile.zoom}"
+    for tile in track(tiles, description=description):
+        url = f"https://wprd02.is.autonavi.com/appmaptile?style={tile.map_style}&x={tile.x}&y={tile.y}&z={tile.zoom}"
         save_path = map_tiles_dir / f"{tile.key}.png"
 
         wait = backoff
@@ -107,14 +108,15 @@ def get_not_exists_tiles(tiles):
 
 tile_dict={}
 
-def preload_tiles(tiles:list[MapTile]):
-    for tile in tiles:
-        tile_dict[tile.key]=Image.open(map_tiles_dir / f"{tile.key}.png")
-
 def load_tile(tile,show_warning=True):
-    if tile.key in tile_dict:
-        return tile_dict[tile.key]
-    else:
-        if show_warning:
-            warn(f"未能成功从本地文件加载地图瓦片 {tile.key}，使用默认瓦片填充")
-        return map_tile_default
+    if tile.key not in tile_dict:
+        if tile_exists(tile):
+            tile_dict[tile.key]=Image.open(map_tiles_dir / f"{tile.key}.png")
+        else:
+            if show_warning:
+                warn(f"未能成功从本地文件加载地图瓦片 {tile.key}")
+            return map_tile_default
+    return tile_dict[tile.key]
+
+if __name__=='__main__':
+    pass
