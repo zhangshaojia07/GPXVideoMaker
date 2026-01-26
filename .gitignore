@@ -4,3 +4,4 @@ debug/output.mp4
 **/__pycache__/
 .venv/
 .DS_Store
+.python-version
