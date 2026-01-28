@@ -39,6 +39,7 @@ cd GPXVideoMaker
 
 2️⃣ **同步环境并运行**:
 ```bash
+uv sync
 uv run main.py
 ```
 
@@ -91,7 +92,7 @@ python main.py
     - [ ] 切换时（是/否冻结时间）摄像机EaseInOut移动
 - [x] 预览渲染
   - [ ] 设置预览参数
-- [ ] 修改 README 中的使用教程
+- [x] 修改 README 中的使用教程
 - [ ] 添加“我只需要一个全览图片”模式
 
 ## 📜 版权与授权声明
