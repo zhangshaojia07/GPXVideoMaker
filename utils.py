@@ -39,7 +39,7 @@ def get_bool_env(key: str, default: bool = False) -> bool:
 
 is_debug = get_bool_env('DEBUG',default=False)
 
-GUI_file_selection = get_bool_env('GUI_FILE_SELECTION',default=True)
+enable_GUI = get_bool_env('GUI',default=True)
 
 is_convert_wgs_to_gcj = True
 
@@ -145,8 +145,11 @@ def start_file(file_path):
         # Linux (如 Ubuntu) 指令
         subprocess.run(["xdg-open", file_path])
 
-def lonlat2px(lonlat:list[tuple[float,float]],zoom:int):
+def lonlat2px(lonlat:list[tuple[float,float]],zoom:int)->list[mtl.Tile]:
     return [mtl.tile(lon,lat,zoom+TX_EXP) for lon,lat in lonlat]
+
+def px2lonlat(tiles:list[mtl.Tile])->list[tuple[float,float]]:
+    return [tuple(mtl.ul(p)) for p in tiles]
 
 from rich import print,inspect
 if __name__=='__main__':

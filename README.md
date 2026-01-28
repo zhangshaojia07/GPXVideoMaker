@@ -71,9 +71,9 @@ python main.py
 
 ## 💡 Tips
 
-如果无法弹出文件选择窗口，请在终端执行 `export GUI_FILE_SELECTION=False` (Linux/Mac) 或 `set GUI_FILE_SELECTION=False` (Windows)。
+如果无法弹出文件选择窗口，请在终端执行 `export GUI=False` (Linux/Mac) 或 `set GUI=False` (Windows)。
 
-> 如果不想每次都输入命令，可以直接在 `utils.py` 中找到 `GUI_file_selection` 硬编码。
+> 如果不想每次都输入命令，可以直接在 `utils.py` 中找到 `enable_GUI` 硬编码。
 
 项目 `debug/` 目录下有演示动图的源 GPX 文件，可供测试。
 
@@ -86,11 +86,13 @@ python main.py
 ## ✅ TODO
 - [x] 用户选择长时间无轨迹点渲染方案
 - [x] 用户选择摄像机中心经纬度算法
-  - [ ] 跟随模式添加相机笼子模式
-  - [ ] 构想切换模式
+  - [x] 跟随模式添加相机笼子模式
+  - [x] 添加切换模式
+    - [ ] 切换时（是/否冻结时间）摄像机EaseInOut移动
 - [x] 预览渲染
   - [ ] 设置预览参数
 - [ ] 修改 README 中的使用教程
+- [ ] 添加“我只需要一个全览图片”模式
 
 ## 📜 版权与授权声明
 

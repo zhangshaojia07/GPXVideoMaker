@@ -48,7 +48,7 @@ def main():
         gpx_file="debug/20260118_QingShanLake.gpx"
     else:
         while True:
-            if GUI_file_selection:
+            if enable_GUI:
                 console.print(f"[bold magenta]请在窗口中选择 GPX 文件[/]")
                 gpx_file = filedialog.askopenfilename(
                     title="选择文件",
@@ -104,26 +104,6 @@ def main():
     seg_bounds=seg.get_bounds()
     trk_ctr_lon=(seg_bounds.min_longitude+seg_bounds.max_longitude)/2
     trk_ctr_lat=(seg_bounds.min_latitude +seg_bounds.max_latitude )/2
-
-# ASK camera ctr mode
-    if is_debug:
-        ctr_mode={
-            'mode_name':'跟随',
-        }
-    else:
-        ctr_mode={}
-        ctr_mode["mode_name"]=user_select(
-            choices=["跟随","固定","切换"],
-            default=0,
-            prompt="请选择摄像机运动模式",
-        )[1]
-        if ctr_mode["mode_name"]=="跟随":
-            pass
-        elif ctr_mode["mode_name"]=="固定":
-            ctr_mode["pos_lon"]=FloatPrompt.ask("指定摄像机中心经度（默认轨迹中心）",default=trk_ctr_lon)
-            ctr_mode["pos_lat"]=FloatPrompt.ask("指定摄像机中心纬度（默认轨迹中心）",default=trk_ctr_lat)
-        elif ctr_mode["mode_name"]=="切换":
-            pass
             
 # ASK resolution
     if is_debug:
@@ -151,6 +131,27 @@ def main():
         vid_dur=FloatPrompt.ask("请输入视频时长（秒） 默认 30s",default=30)
     frame_no=np.ceil(vid_dur*FPS).astype(np.int64)
 
+# ASK camera ctr mode
+    if is_debug:
+        ctr_mode={
+            'mode_name':'跟随',
+            "cam_box_size":108,
+        }
+    else:
+        ctr_mode={}
+        ctr_mode["mode_name"]=user_select(
+            choices=["跟随","固定","切换"],
+            default=0,
+            prompt="请选择摄像机运动模式",
+        )[1]
+        if ctr_mode["mode_name"]=="跟随":
+            ctr_mode["cam_box_size"]=IntPrompt.ask("指定相机笼边长（像素）",default=int(min(img_w,img_h)*0.15))
+        elif ctr_mode["mode_name"]=="固定":
+            ctr_mode["pos_lon"]=FloatPrompt.ask("指定摄像机中心经度（默认轨迹中心）",default=trk_ctr_lon)
+            ctr_mode["pos_lat"]=FloatPrompt.ask("指定摄像机中心纬度（默认轨迹中心）",default=trk_ctr_lat)
+        elif ctr_mode["mode_name"]=="切换":
+            ctr_mode["margin_factor"]=FloatPrompt.ask("指定画面边缘重叠比例（0.0~0.5）",default=0.4)
+
 # PROCESS video info
     frame_duration = seg_duration / (frame_no-1)
 
@@ -176,29 +177,46 @@ def main():
     traj_speed = np.array(smooth_moving_average([mps_to_kmph(seg.get_speed(i)) for i,p in enumerate(seg.points)]))
     traj_speed:list[float] = traj_speed/traj_speed.max()
     traj_lonlat_np=[np.array(p) for p in traj_lonlat]
+    traj_px:list[mtl.Tile]=lonlat2px(traj_lonlat,zoom)
+    traj:list[tuple[int,int]]=[(p.x,p.y) for p in traj_px]
     gps_lonlat=[traj_lonlat_np[i]
              if i+1==len(traj_lonlat_np)
              else traj_lonlat_np[i]+(tm-seg.points[i].time)/(seg.points[i+1].time-seg.points[i].time)*(traj_lonlat_np[i+1]-traj_lonlat_np[i])
              for i,tm in zip(idx_list,moments)]
     gps_lonlat:list[tuple[float,float]]=[tuple(p) for p in gps_lonlat]
+    gps_px=lonlat2px(gps_lonlat,zoom)
+    gps_xy:list[tuple[int,int]]=[(px.x,px.y) for px in gps_px]
     
     if ctr_mode["mode_name"]=="跟随":
-        ctr_list_pos=gps_lonlat
+        cur_x,cur_y=gps_xy[0]
+        ctr_list_px=[]
+        tol=ctr_mode["cam_box_size"]//2
+        for x,y in gps_xy:
+            cur_x=min(max(cur_x,x-tol),x+tol)
+            cur_y=min(max(cur_y,y-tol),y+tol)
+            ctr_list_px.append(mtl.Tile(cur_x,cur_y,zoom+TX_EXP))            
     elif ctr_mode["mode_name"]=="固定":
-        ctr_list_pos=[(ctr_mode["pos_lon"],ctr_mode["pos_lat"])] * frame_no
+        ctr_list_px=[mtl.tile(ctr_mode["pos_lon"],ctr_mode["pos_lat"],zoom+TX_EXP)] * frame_no
     elif ctr_mode["mode_name"]=="切换":
-        pass
-    ctr_list_px=lonlat2px(ctr_list_pos,zoom)
-    traj_px:list[mtl.Tile]=lonlat2px(traj_lonlat,zoom)
-    traj:list[tuple[int,int]]=[(p.x,p.y) for p in traj_px]
-    gps_list:list[tuple[int,int]]=[(px.x,px.y) for px in lonlat2px(gps_lonlat,zoom)]
+        cur_x,cur_y=gps_xy[0]
+        half_img_w,half_img_h=img_w//2,img_h//2
+        ctr_list_px=[]
+        mar=ctr_mode["margin_factor"]
+        coe=(1-mar)*2
+        for x,y in gps_xy:
+            fit_x=min(max(x,cur_x-half_img_w),cur_x+half_img_w)
+            fit_y=min(max(y,cur_y-half_img_h),cur_y+half_img_h)
+            if fit_x != x or fit_y != y:
+                cur_x=int(cur_x*(1-coe)+fit_x*coe)
+                cur_y=int(cur_y*(1-coe)+fit_y*coe)
+            ctr_list_px.append(mtl.Tile(cur_x,cur_y,zoom+TX_EXP))  
 
 # SUMMARY video info
     lists={
         'ctr_px':ctr_list_px,
         'tm':moments,
         'map_style':[map_style]*frame_no,
-        'traj':[traj[:i+1]+[j] for i,j in zip(idx_list,gps_list)],
+        'traj':[traj[:i+1]+[j] for i,j in zip(idx_list,gps_xy)],
         'traj_vals':[traj_speed[:i+1] for i in idx_list],
         'traj_dis':[traj_disable[:i+1] for i in idx_list],
         'gps_img':[get_gps_breathe(i) if traj_disable[p] else get_gps_no_dir(course[p]) for i,p in enumerate(idx_list)],
@@ -231,7 +249,7 @@ def main():
         output_file="debug/output.mp4"
     else:
         while True:
-            if GUI_file_selection:
+            if enable_GUI:
                 console.print(f"[bold magenta]请在窗口中指定导出视频文件[/]")
                 output_file = filedialog.asksaveasfilename(
                     title="保存为",
