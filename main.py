@@ -175,7 +175,7 @@ def main():
     speed:list[float] = [mps_to_kmph(seg.get_speed(i)) for i in idx_list]
     traj_lonlat:list[tuple[float,float]] = [(p.longitude,p.latitude) for p in seg.points]
     traj_speed = np.array(smooth_moving_average([mps_to_kmph(seg.get_speed(i)) for i,p in enumerate(seg.points)]))
-    traj_speed:list[float] = traj_speed/traj_speed.max()
+    traj_speed:list[float] = (traj_speed-10)/(40-10)
     traj_lonlat_np=[np.array(p) for p in traj_lonlat]
     traj_px:list[mtl.Tile]=lonlat2px(traj_lonlat,zoom)
     traj:list[tuple[int,int]]=[(p.x,p.y) for p in traj_px]
@@ -196,7 +196,7 @@ def main():
             cur_y=min(max(cur_y,y-tol),y+tol)
             ctr_list_px.append(mtl.Tile(cur_x,cur_y,zoom+TX_EXP))            
     elif ctr_mode["mode_name"]=="固定":
-        ctr_list_px=[mtl.tile(ctr_mode["pos_lon"],ctr_mode["pos_lat"],zoom+TX_EXP)] * frame_no
+        ctr_list_px=[mtl.tile(ctr_mode["pos_lon"],ctr_mode["pos_lat"],zoom+TX_EXP) for _ in range(frame_no)]
     elif ctr_mode["mode_name"]=="切换":
         cur_x,cur_y=gps_xy[0]
         half_img_w,half_img_h=img_w//2,img_h//2
