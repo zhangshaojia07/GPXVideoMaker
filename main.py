@@ -129,7 +129,7 @@ def main():
         vid_dur=10
     else:
         vid_dur=FloatPrompt.ask("请输入视频时长（秒） 默认 30s",default=30)
-    frame_no=np.ceil(vid_dur*FPS).astype(np.int64)
+    frame_no=max(np.ceil(vid_dur*FPS).astype(np.int64),2)
 
 # ASK camera ctr mode
     if is_debug:
@@ -175,7 +175,7 @@ def main():
     speed:list[float] = [mps_to_kmph(seg.get_speed(i)) for i in idx_list]
     traj_lonlat:list[tuple[float,float]] = [(p.longitude,p.latitude) for p in seg.points]
     traj_speed = np.array(smooth_moving_average([mps_to_kmph(seg.get_speed(i)) for i,p in enumerate(seg.points)]))
-    traj_speed:list[float] = (traj_speed-10)/(40-10)
+    traj_speed:list[float] = (traj_speed-0)/(40-0)
     traj_lonlat_np=[np.array(p) for p in traj_lonlat]
     traj_px:list[mtl.Tile]=lonlat2px(traj_lonlat,zoom)
     traj:list[tuple[int,int]]=[(p.x,p.y) for p in traj_px]
