@@ -41,10 +41,18 @@ OVERLAY_PRESETS = {
     },
 }
 
-OUTPUT_MODE_CHOICES = ["Video", "Timestamped Frames", "Overall Images", "All"]
+OUTPUT_MODE_CHOICES = ["Video", "Timestamped Frames", "Overall Image", "Video & Overall Image", "All"]
 
 def parse_args():
     parser = argparse.ArgumentParser(description="GPX video/frame/image renderer")
+    parser.add_argument(
+        "--debug-gpx-file",
+        type=str,
+        default=None,
+        nargs="?",
+        const="__AUTO_DEBUG_GPX__",
+        help="Use a GPX input file only (non-debug flow). If omitted, auto-pick one *.gpx from debug/.",
+    )
     parser.add_argument(
         "--debug-shortcut",
         action="store_true",
@@ -58,9 +66,14 @@ def parse_args():
     )
     parser.add_argument(
         "--debug-output-mode",
-        choices=["video", "frames", "overall", "all"],
-        default="all",
-        help="Output type for --debug-shortcut",
+        choices=["video", "frames", "overall", "video+overall", "all"],
+        default=None,
+        help="Output type for debug shortcut (also enables debug shortcut when provided)",
+    )
+    parser.add_argument(
+        "--debug-output",
+        action="store_true",
+        help="Write output media into debug/ (debug/output.mp4, debug/frames, debug/overall.png)",
     )
     return parser.parse_args()
 
@@ -68,7 +81,8 @@ def map_debug_output_mode(mode: str) -> str:
     return {
         "video": "Video",
         "frames": "Timestamped Frames",
-        "overall": "Overall Images",
+        "overall": "Overall Image",
+        "video+overall": "Video & Overall Image",
         "all": "All",
     }[mode]
 
@@ -96,10 +110,10 @@ def pick_debug_gpx(cli_gpx: str | None) -> str:
     return str(candidates[0])
 
 def get_debug_defaults(output_mode: str) -> dict:
-    if output_mode == "Overall Images":
+    if output_mode == "Overall Image":
         return {
-            "map_style": 6,
-            "zoom": 14,
+            "map_style": DEFAULT_MAP_STYLE_OVERALL,
+            "zoom": DEFAULT_MAP_ZOOM_OVERALL,
             "img_w": 1920,
             "img_h": 1080,
             "vid_dur": 6,
@@ -108,10 +122,10 @@ def get_debug_defaults(output_mode: str) -> dict:
             },
         }
     return {
-        "map_style": 7,
-        "zoom": 16,
-        "img_w": 1280,
-        "img_h": 720,
+        "map_style": DEFAULT_MAP_STYLE_VIDEO_FRAMES,
+        "zoom": DEFAULT_MAP_ZOOM_VIDEO_FRAMES,
+        "img_w": 1920,
+        "img_h": 1080,
         "vid_dur": 10,
         "ctr_mode": {
             "mode_name": "Follow",
@@ -171,42 +185,43 @@ def pick_critical_frame_infos(full_frames: list[dict]) -> list[dict]:
             idx.append(i)
     return [full_frames[i] for i in idx]
 
-def save_overall_images(seg, zoom: int, map_style: int, img_w: int, img_h: int, output_dir: Path, overlay_opts: dict):
-    prepare_dir(output_dir)
+def compute_overall_canvas_size(traj: list[tuple[int, int]], ctr_px: mtl.Tile, margin_ratio: float = 0.08) -> tuple[int, int]:
+    if not traj:
+        return 1280, 720
+    half_w = max(abs(x - ctr_px.x) for x, _ in traj)
+    half_h = max(abs(y - ctr_px.y) for _, y in traj)
+    width = int(np.ceil(half_w * 2 * (1 + margin_ratio * 2))) + 80
+    height = int(np.ceil(half_h * 2 * (1 + margin_ratio * 2))) + 80
+    width = max(width, 640)
+    height = max(height, 480)
+    return width, height
+
+def save_overall_image(seg, zoom: int, map_style: int, output_file: Path):
+    prepare_dir(output_file.parent)
     seg_bounds = seg.get_bounds()
     trk_ctr_lon = (seg_bounds.min_longitude + seg_bounds.max_longitude) / 2
     trk_ctr_lat = (seg_bounds.min_latitude + seg_bounds.max_latitude) / 2
     ctr_px = mtl.tile(trk_ctr_lon, trk_ctr_lat, zoom + TX_EXP)
 
     traj_lonlat = [(p.longitude, p.latitude) for p in seg.points]
-    traj_speed = np.array(smooth_moving_average([mps_to_kmph(seg.get_speed(i)) for i, _ in enumerate(seg.points)]))
-    traj_speed = list((traj_speed - 0) / (40 - 0))
     traj = [(p.x, p.y) for p in lonlat2px(traj_lonlat, zoom)]
-    traj_disable = [False] * len(traj)
-    last_idx = len(seg.points) - 1
-    course = 0 if last_idx == 0 else -seg.points[last_idx - 1].course_between(seg.points[last_idx])
+    img_w, img_h = compute_overall_canvas_size(traj, ctr_px)
+    total_dist_km = sum(seg.points[i].distance_2d(seg.points[i - 1]) for i in range(1, len(seg.points))) / 1000
 
     prepare_tiles(set(pave_tiles_preload(img_w, img_h, ctr_px, map_style)))
-
-    for name, idx in [("start", 0), ("middle", len(seg.points) // 2), ("end", len(seg.points) - 1)]:
-        point = seg.points[idx]
-        img = Image.new("RGB", (img_w, img_h))
-        render_one_frame(
+    img = Image.new("RGB", (img_w, img_h))
+    pave_tiles(img, ctr_px, map_style, True)
+    if len(traj) >= 2:
+        overlay_track_color(
             img=img,
             ctr_px=ctr_px,
-            tm=point.time,
-            map_style=map_style,
-            tile_warning=True,
-            traj=traj[: idx + 1],
-            traj_vals=traj_speed[: idx + 1],
-            traj_dis=traj_disable[: idx + 1],
-            gps_img=get_gps_no_dir(course),
-            speed=mps_to_kmph(seg.get_speed(idx)),
-            dist=sum(seg.points[i].distance_2d(seg.points[i - 1]) for i in range(1, idx + 1)) / 1000,
-            clock=point.time.astimezone(TZ),
-            overlay_opts=overlay_opts,
+            traj=traj,
+            colors=[(255, 0, 0)] * (len(traj) - 1),
+            dis=[False] * (len(traj) - 1),
+            line_width=12,
         )
-        img.save(output_dir / f"overall_{name}.png")
+    overlay_total_distance(img, total_dist_km, offset_y=50)
+    img.save(output_file)
     
 def render_one_frame(
         img:Image.Image,
@@ -242,17 +257,28 @@ def render_one_frame(
 
 def main():
     args = parse_args()
-    debug_shortcut = args.debug_shortcut
+    debug_shortcut = args.debug_shortcut or (args.debug_output_mode is not None)
+    debug_output = args.debug_output
+    output_to_debug = is_debug or debug_shortcut or debug_output
     output_mode: str | None = None
 
     if debug_shortcut:
-        output_mode = map_debug_output_mode(args.debug_output_mode)
+        output_mode = map_debug_output_mode(args.debug_output_mode or "all")
     elif is_debug:
         output_mode = "Video"
     debug_defaults = get_debug_defaults(output_mode) if (is_debug or debug_shortcut) else None
 
 # ASK gpx file
-    if debug_shortcut:
+    if args.debug_gpx_file:
+        if args.debug_gpx_file == "__AUTO_DEBUG_GPX__":
+            gpx_file = pick_debug_gpx(None)
+        else:
+            gpx_path = Path(args.debug_gpx_file)
+            if not (gpx_path.exists() and gpx_path.suffix.lower() == ".gpx"):
+                raise FileNotFoundError(f"Invalid --debug-gpx-file: {args.debug_gpx_file}")
+            gpx_file = str(gpx_path)
+        info(f"Input GPX from --debug-gpx-file: {gpx_file}")
+    elif debug_shortcut:
         gpx_file = pick_debug_gpx(args.debug_gpx)
         info(f"Debug shortcut GPX: {gpx_file}")
     elif is_debug:
@@ -293,21 +319,64 @@ def main():
         traj_disable.append(ret)
     traj_disable.append(False)
 
+# ASK output mode
+    if output_mode is None:
+        output_mode = user_select(
+            choices=OUTPUT_MODE_CHOICES,
+            default=0,
+            prompt="Please select output mode",
+        )[1]
+
 # ASK map_style
     if is_debug or debug_shortcut:
         map_style=debug_defaults["map_style"]
     else:
+        default_map_style = DEFAULT_MAP_STYLE_OVERALL if output_mode == "Overall Image" else DEFAULT_MAP_STYLE_VIDEO_FRAMES
+        default_map_style_idx = 0 if default_map_style == 6 else 1
         map_style=user_select(
             choices=["Satellite Map","Vector Map"],
-            default=1,
+            default=default_map_style_idx,
             prompt="Please select map style",
         )[0]+6
 
-# ASK zoom
+# AUTO zoom
     if is_debug or debug_shortcut:
         zoom=debug_defaults["zoom"]
     else:
-        zoom=IntPrompt.ask("Please enter map zoom level",choices=[str(i) for i in range(1,19)],default=16)
+        default_zoom = DEFAULT_MAP_ZOOM_OVERALL if output_mode == "Overall Image" else DEFAULT_MAP_ZOOM_VIDEO_FRAMES
+        zoom=default_zoom
+
+# CLEAN debug outputs
+    if output_to_debug:
+        cleanup_debug_outputs()
+
+# OVERALL ONLY mode
+    if output_mode == "Overall Image":
+        if output_to_debug:
+            output_overall_file = Path("debug/overall.png")
+        else:
+            while True:
+                if enable_GUI:
+                    console.print(f"[bold magenta]Please specify the output overall image file in the window[/]")
+                    output_file = filedialog.asksaveasfilename(
+                        title="Save As",
+                        defaultextension=".png",
+                        filetypes=[("PNG Files", "*.png")],
+                    )
+                else:
+                    output_file=Prompt.ask("Please enter output overall image file path", default="overall.png")
+                output_file=output_file.strip().strip('"')
+                try:
+                    if Path(output_file).suffix.lower() == '.png':
+                        output_overall_file = Path(output_file)
+                        break
+                except Exception:
+                    pass
+                warn(f"File must be a PNG file: '{output_file}'")
+
+        save_overall_image(seg, zoom, map_style, output_overall_file)
+        info(f"Overall image saved to: {output_overall_file.resolve()}")
+        return
 
 # ANALYSIS seg
     start_time, end_time = seg.get_time_bounds()
@@ -341,18 +410,6 @@ def main():
     else:
         vid_dur=FloatPrompt.ask("Please enter video duration (seconds), default 30s",default=30)
     frame_no=max(np.ceil(vid_dur*FPS).astype(np.int64),2)
-
-# ASK output mode
-    if output_mode is None:
-        output_mode = user_select(
-            choices=OUTPUT_MODE_CHOICES,
-            default=0,
-            prompt="Please select output mode",
-        )[1]
-
-# CLEAN debug outputs
-    if is_debug or debug_shortcut:
-        cleanup_debug_outputs()
 
 # ASK overlay preset/options
     overlay_opts = ask_overlay_options(debug_shortcut=debug_shortcut)
@@ -475,10 +532,10 @@ def main():
 # ASK output file
     output_video = None
     output_frames_dir = None
-    output_overall_dir = None
+    output_overall_file = None
 
-    if output_mode in ("Video", "All"):
-        if is_debug or debug_shortcut:
+    if output_mode in ("Video", "Video & Overall Image", "All"):
+        if output_to_debug:
             output_video = Path("debug/output.mp4")
         else:
             while True:
@@ -501,16 +558,16 @@ def main():
                 warn(f"File must be an MP4 file: '{output_file}'")
 
     if output_mode in ("Timestamped Frames", "All"):
-        if is_debug or debug_shortcut:
+        if output_to_debug:
             output_frames_dir = Path("debug/frames")
         else:
             output_frames_dir = Path(Prompt.ask("Please enter output directory for frames", default="frames"))
 
-    if output_mode in ("Overall Images", "All"):
-        if is_debug or debug_shortcut:
-            output_overall_dir = Path("debug/overall")
+    if output_mode in ("Overall", "Video & Overall Image", "All"):
+        if output_to_debug:
+            output_overall_file = Path("debug/overall.png")
         else:
-            output_overall_dir = Path(Prompt.ask("Please enter output directory for overall images", default="overall"))
+            output_overall_file = Path(Prompt.ask("Please enter output overall image file path", default="overall.png"))
 
     if output_video is not None:
         writer=VideoWriter(str(output_video),(img_w,img_h))
@@ -538,9 +595,9 @@ def main():
         save_frames(filled, img_w, img_h, output_frames_dir)
         info(f"Frames saved to: {output_frames_dir.resolve()}")
 
-    if output_overall_dir is not None:
-        save_overall_images(seg, zoom, map_style, img_w, img_h, output_overall_dir, overlay_opts)
-        info(f"Overall images saved to: {output_overall_dir.resolve()}")
+    if output_overall_file is not None:
+        save_overall_image(seg, zoom, map_style, output_overall_file)
+        info(f"Overall image saved to: {output_overall_file.resolve()}")
 
 if __name__=='__main__':
     main()

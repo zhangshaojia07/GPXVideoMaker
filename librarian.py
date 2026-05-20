@@ -15,11 +15,11 @@ map_tile_default = Image.open("graphics/map_tile_default.png")
 
 @dataclass(frozen=True)
 class MapTile:
-    """表示一张地图瓦片的基本信息"""
+    """basic info of a map tile"""
     x: int          
     y: int          
-    zoom: int       # 缩放层级
-    map_style: int  # 地图风格。6 为卫星，7 为矢量。
+    zoom: int
+    map_style: int  # map style  6=satellite, 7=vector
     def __post_init__(self):
         for field_name, value in self.__dict__.items():
             if not isinstance(value, int):
@@ -49,38 +49,37 @@ class MapTile:
 
 def tile_exists(tile:MapTile) -> bool:
     save_path = map_tiles_dir / f"{tile.key}.png"
-    return save_path.is_file() and save_path.stat().st_size > 0      # 文件存在且非空
+    return save_path.is_file() and save_path.stat().st_size > 0      # file exist and non-empty
 
 def download_tiles(
     tiles: list[mtl.Tile],
     timeout: float | None = 10,
     retries: int = 3,
     backoff: float = 1.0,
-    description: str = "下载瓦片",
+    description: str = "download tiles",
 ) -> Path:
     """
-    下载单张瓦片并返回保存路径。
+    Download a single tile and return to the saved path.
 
     Parameters
     ----------
     tile : Tuple[int, int, int, int]
-        瓦片信息。
     timeout : float | None, optional
-        单次请求超时（秒），默认 10 s；None 表示无超时。
+        Single request timeout (seconds), default is 10 seconds; None indicates no timeout.
     retries : int, optional
-        最大重试次数（不含首次），默认 3。
+        Maximum retry count (excluding the first attempt), default is 3.
     backoff : float, optional
-        首次重试等待秒数，后续×2 退避，默认 1.0 s。
+        The number of seconds to wait for the first retry, and it doubles for each subsequent attempt. The default value is 1.0 second.
 
     Returns
     -------
     Path
-        下载后的文件绝对路径。
+        The absolute path of the downloaded file.
 
     Raises
     ------
     RuntimeError
-        用尽重试次数后仍失败。
+        Failed even after exhausting all retry attempts.
     """
 
     for tile in track(tiles, description=description):
@@ -98,7 +97,7 @@ def download_tiles(
             except (RequestException, HTTPError, Timeout) as exc:
                 if attempt == retries:
                     raise RuntimeError(
-                        f"瓦片 {tile.key} 下载失败（重试{retries}次）"
+                        f"Tile {tile.key} failed downloading(retried {retries} times)"
                     ) from exc
                 time.sleep(wait)
                 wait *= 2
@@ -114,7 +113,7 @@ def load_tile(tile,show_warning=True):
             tile_dict[tile.key]=Image.open(map_tiles_dir / f"{tile.key}.png")
         else:
             if show_warning:
-                warn(f"未能成功从本地文件加载地图瓦片 {tile.key}")
+                warn(f"Failed to successfully load map tiles from the local file {tile.key}")
             return map_tile_default
     return tile_dict[tile.key]
 

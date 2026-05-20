@@ -8,51 +8,88 @@ from datetime import datetime,timedelta
 import os
 import platform
 import subprocess
+import json
 import mercantile as mtl
 
 console=Console(highlight=None)
 
-def info(text="Tips:等红灯其实是在等绿灯"):
+def info(text="Tip: waiting is part of smooth rendering"):
     console.print(f"[italic blue]{escape(text)}[/]")
 
-def warn(text="Tips:等红灯其实是在等绿灯"):
+def warn(text="Warning: please check your input"):
     console.print(f"[italic red]{escape(text)}[/]")
 
-r'''
-In CMD:
-
-C:\>set DEBUG="True"
-
-Check:
-
-C:\>echo %DEBUG%
-'''
-def get_bool_env(key: str, default: bool = False) -> bool:
-    """从环境变量读取 bool 配置，兼容常见写法"""
-    val = os.getenv(key, "").strip().lower()
-    if val in ("true", "1", "yes", "on", "t", "y"):
-        return True
-    if val in ("false", "0", "no", "off", "f", "n"):
-        return False
-    # 非法值时返回默认（也可以 raise ValueError，如果想更严格）
-    return default
-
-is_debug = get_bool_env('DEBUG',default=False)
-
-enable_GUI = get_bool_env('GUI',default=True)
-
-is_convert_wgs_to_gcj = True
-
-TZ_name = "Asia/Shanghai"
-TZ = pytz.timezone(TZ_name)
+SETTINGS_FILE = Path("settings.json")
+DEFAULT_SETTINGS = {
+    "is_debug": False,
+    "enable_GUI": True,
+    "is_convert_wgs_to_gcj": True,
+    "TZ_name": "Asia/Shanghai",
+    "default_map": {
+        "video_frames": {
+            "style": "satellite",
+            "zoom": 16,
+        },
+        "overall": {
+            "style": "vector",
+            "zoom": 14,
+        },
+    },
+    "FPS": 30,
+    "track_fail_interval_sec": 3 * 60,
+    "preview_frame_no": 1,
+}
 
 TX_EXP = 8
 
-FPS = 30
+def load_settings() -> dict:
+    settings = DEFAULT_SETTINGS.copy()
+    if SETTINGS_FILE.exists():
+        with open(SETTINGS_FILE, "r", encoding="utf-8-sig") as f:
+            user_settings = json.load(f)
+        if isinstance(user_settings, dict):
+            settings.update(user_settings)
+    else:
+        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+            json.dump(settings, f, ensure_ascii=False, indent=2)
+    return settings
 
-track_fail_interval_sec = 3 * 60
+SETTINGS = load_settings()
 
-preview_frame_no = 1
+is_debug = bool(SETTINGS["is_debug"])
+enable_GUI = bool(SETTINGS["enable_GUI"])
+is_convert_wgs_to_gcj = bool(SETTINGS["is_convert_wgs_to_gcj"])
+TZ_name = str(SETTINGS["TZ_name"])
+TZ = pytz.timezone(TZ_name)
+FPS = int(SETTINGS["FPS"])
+track_fail_interval_sec = int(SETTINGS["track_fail_interval_sec"])
+preview_frame_no = int(SETTINGS["preview_frame_no"])
+
+def normalize_map_style(style_value, fallback: int) -> int:
+    if isinstance(style_value, int):
+        return style_value if style_value in (6, 7) else fallback
+    style = str(style_value).strip().lower()
+    if style in ("satellite", "sat", "s"):
+        return 6
+    if style in ("vector", "vec", "v"):
+        return 7
+    return fallback
+
+def normalize_zoom(zoom_value, fallback: int) -> int:
+    try:
+        zoom = int(zoom_value)
+    except (TypeError, ValueError):
+        return fallback
+    return min(max(zoom, 1), 18)
+
+_default_map = SETTINGS.get("default_map", {})
+_video_frames_map = _default_map.get("video_frames", {})
+_overall_map = _default_map.get("overall", {})
+
+DEFAULT_MAP_STYLE_VIDEO_FRAMES = normalize_map_style(_video_frames_map.get("style"), fallback=6)
+DEFAULT_MAP_ZOOM_VIDEO_FRAMES = normalize_zoom(_video_frames_map.get("zoom"), fallback=16)
+DEFAULT_MAP_STYLE_OVERALL = normalize_map_style(_overall_map.get("style"), fallback=7)
+DEFAULT_MAP_ZOOM_OVERALL = normalize_zoom(_overall_map.get("zoom"), fallback=14)
 
 def prepare_dir(p: Path) -> Path:
     p.mkdir(parents=True, exist_ok=True)
@@ -64,7 +101,7 @@ def fix_xiaomi_altitude_bug(ele):
 def mps_to_kmph(x):
     return x*3.6
 
-def user_select(choices,prompt="请选择",default=None):
+def user_select(choices,prompt="Please choose",default=None):
     for i,p in enumerate(choices):
         console.print(f"[bold magenta][{i+1}][/]: [bold yellow]{escape(p)}[/]{" [bold cyan](default)[/]" if default==i else ""}")
     idx=IntPrompt.ask(
@@ -77,31 +114,21 @@ def user_select(choices,prompt="请选择",default=None):
     return idx,choices[idx],len(choices)
 
 def smooth_moving_average(vals, window_size=5):
-    """简单的移动平均"""
+    """Simple moving average."""
     smoothed = np.convolve(vals, np.ones(window_size)/window_size, mode='same')
     return smoothed
 
 def smooth_moving_average_angle(vals, window_size=5):
-    """适配0~360度循环角度的移动平均函数"""
-    # 1. 转换为numpy数组，确保数据类型正确
+    """Moving average for cyclic angles (0-360 degrees)."""
     vals = np.asarray(vals, dtype=np.float64)
-    
-    # 2. 角度转弧度（numpy三角函数默认用弧度）
     rad = np.radians(vals)
-    
-    # 3. 计算每个角度的cos和sin分量（矢量表示）
     cos_vals = np.cos(rad)
     sin_vals = np.sin(rad)
-    
-    # 4. 对cos、sin分量分别做移动平均（保持mode='same'保证长度一致）
     window = np.ones(window_size) / window_size
     cos_smoothed = np.convolve(cos_vals, window, mode='same')
     sin_smoothed = np.convolve(sin_vals, window, mode='same')
-    
-    # 5. 矢量转回角度（arctan2返回-π~π）
     rad_smoothed = np.arctan2(sin_smoothed, cos_smoothed)
     deg_smoothed = np.degrees(rad_smoothed)
-    
     return deg_smoothed
 
 def max_every_k_frames(vals, k:int):
@@ -128,21 +155,17 @@ def start_file(file_path):
 
     file_path=Path(file_path)
 
-    # 检查文件是否存在
     if not Path.exists(file_path):
-        warn(f"错误：找不到文件 {file_path}")
+        warn(f"Error: file not found: {file_path}")
         return
 
     sys_platform = platform.system()
 
     if sys_platform == "Windows":
-        # Windows 专用，最简单
         os.startfile(file_path)
     elif sys_platform == "Darwin":
-        # macOS 指令
         subprocess.run(["open", file_path])
     else:
-        # Linux (如 Ubuntu) 指令
         subprocess.run(["xdg-open", file_path])
 
 def lonlat2px(lonlat:list[tuple[float,float]],zoom:int)->list[mtl.Tile]:

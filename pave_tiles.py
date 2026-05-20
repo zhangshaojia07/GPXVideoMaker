@@ -26,15 +26,15 @@ def pave_tiles(img,ctr_px,map_style,tile_missing_warning=True):
         off_x,off_y=tile.x<<TX_EXP,tile.y<<TX_EXP
         img.paste(load_tile(tile,tile_missing_warning),(off_x-lt_px.x,off_y-lt_px.y))
 
-def prepare_tiles(tiles,description="下载瓦片"):
+def prepare_tiles(tiles,description="download tiles"):
     tiles_to_be_downloaded=get_not_exists_tiles(tiles)
     download_tiles(tiles_to_be_downloaded,description=description)
 
 from rich import inspect
 from PIL import Image
 if __name__=='__main__':
-    lon_min, lat_min = 119.8, 29.9      # 杭州西南角
-    lon_max, lat_max = 120.6, 30.5      # 杭州东北角
+    lon_min, lat_min = 119.8, 29.9      # The southwestern corner of Hangzhou
+    lon_max, lat_max = 120.6, 30.5      # The northeastern part of Hangzhou
 
     map_settings = {
         'ctr_px': mtl.tile(120.16832787794688,30.192544547086104,18+TX_EXP),

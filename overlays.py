@@ -84,6 +84,37 @@ def overlay_dist_time(img:Image.Image,dist:float,time:datetime|timedelta,offset_
         anchor="ms"
     )
 
+def overlay_total_distance(img:Image.Image,dist:float,offset_y:int=50):
+    draw=ImageDraw.Draw(img)
+
+    img.paste(StrawberryCountBG, (0,offset_y),StrawberryCountBG)
+
+    text_offset_y=24
+
+    draw_monospaced_text(
+        draw,
+        (StrawberryCountBG_w-55, offset_y+text_offset_y),
+        "km",
+        ImageFont.truetype(font_file, 24),
+        22,
+        fill="#d0d0d0",
+        stroke_width=2,
+        stroke_fill="black",
+        anchor="ms"
+    )
+
+    draw_monospaced_text(
+        draw,
+        (26, offset_y+text_offset_y),
+        f"{dist:6.2f}",
+        ImageFont.truetype(font_file, 40),
+        35,
+        fill="white",
+        stroke_width=2,
+        stroke_fill="black",
+        anchor="ms"
+    )
+
 def overlay_speed(img:Image.Image,speed:float,color=None,offset_y:int=140):
 
     draw=ImageDraw.Draw(img)
@@ -136,7 +167,7 @@ def overlay_track(img:Image.Image,ctr_px:mtl.Tile,traj:list[tuple[int,int]],vals
     
     cmap = plt.colormaps[cmap] if isinstance(cmap, str) else cmap
     colors = cmap(vals)    # (N-1, 4)  float 0-1
-    colors = (colors[:,:3] * 255).astype(np.uint8)  # 转 0-255 RGB
+    colors = (colors[:,:3] * 255).astype(np.uint8)  # turn to 0-255 RGB
     colors = [tuple(col) for col in colors]
 
     overlay_track_color(img,ctr_px,traj,colors,dis,line_width)

@@ -10,14 +10,10 @@ from coord_convert.transform import wgs2gcj
 console = Console(highlight=None)
 
 def style_line(i, name, km, up, start, end):
-    # 粉紫加粗序号
     num = f'[bold magenta][{i}][/]'
-    # 红色加粗 Track 名
     track = f'[bold red]{escape(name or f"Track{i}")}[/]'
-    # 绿色距离/爬升
     dist = f'[green]{km:.2f}km[/]'
     elev = f'[green]{up:.0f}m[/]'
-    # 日期和时间
     s_fmt = fmt_tim_rich(start)
     e_fmt = fmt_tim_rich(end)
 
@@ -26,7 +22,7 @@ def style_line(i, name, km, up, start, end):
 def extract_gpx(gpx_file):
 
     gpx = gpxpy.parse(open(gpx_file))
-    info(f"GPX 文件导入成功: {gpx_file}")
+    info(f"GPX file import success: {gpx_file}")
 
     for point in (point 
                 for track in gpx.tracks 
@@ -34,7 +30,7 @@ def extract_gpx(gpx_file):
                 for point in segment.points):
         point.elevation = fix_xiaomi_altitude_bug(point.elevation)
 
-    # 列出所有 Track & Segment
+    # list all Track & Segment
     root = Tree("[bold bright_white]GPX Tracks[/]", guide_style="bright_black")
 
     choices = []
@@ -43,7 +39,6 @@ def extract_gpx(gpx_file):
         md, ud = trk.get_moving_data(), trk.get_uphill_downhill()
         start, end = trk.get_time_bounds()
 
-        # 一级节点：track 概要
         track_line = style_line(i,
                             trk.name,
                             md.moving_distance/1000,
@@ -52,7 +47,6 @@ def extract_gpx(gpx_file):
                             end)
         track_node = root.add(track_line, style="default", highlight=False)
 
-        # 二级节点：逐个 segment
         for seg_idx, seg in enumerate(trk.segments, 1):
             seg_md, seg_ud = seg.get_moving_data(), seg.get_uphill_downhill()
             seg_start, seg_end = seg.get_time_bounds()

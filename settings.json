@@ -1,0 +1,19 @@
+﻿{
+  "is_debug": false,
+  "enable_GUI": false,
+  "is_convert_wgs_to_gcj": true,
+  "TZ_name": "Asia/Shanghai",
+  "default_map": {
+    "video_frames": {
+      "style": "vector",
+      "zoom": 17
+    },
+    "overall": {
+      "style": "vector",
+      "zoom": 15
+    }
+  },
+  "FPS": 30,
+  "track_fail_interval_sec": 180,
+  "preview_frame_no": 1
+}
