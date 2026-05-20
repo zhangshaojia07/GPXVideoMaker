@@ -1,6 +1,7 @@
 map_tiles/
 map_tiles/*
-debug/output.mp4
+debug/*
+!debug/*.gpx
 **/__pycache__/
 .venv/
 .DS_Store
