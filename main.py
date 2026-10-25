@@ -46,14 +46,6 @@ OUTPUT_MODE_CHOICES = ["Video", "Timestamped Frames", "Overall Image", "Video & 
 def parse_args():
     parser = argparse.ArgumentParser(description="GPX video/frame/image renderer")
     parser.add_argument(
-        "--debug-gpx-file",
-        type=str,
-        default=None,
-        nargs="?",
-        const="__AUTO_DEBUG_GPX__",
-        help="Use a GPX input file only (non-debug flow). If omitted, auto-pick one *.gpx from debug/.",
-    )
-    parser.add_argument(
         "--debug-shortcut",
         action="store_true",
         help="Use debug defaults, auto-read GPX from debug/, and write outputs into debug/",
@@ -62,7 +54,9 @@ def parse_args():
         "--debug-gpx",
         type=str,
         default=None,
-        help="GPX path for --debug-shortcut (default: first *.gpx in debug/)",
+        nargs="?",
+        const="__AUTO_DEBUG_GPX__",
+        help="Use a GPX input file only; optional path. If omitted, auto-pick one *.gpx from debug/. Also used by --debug-shortcut.",
     )
     parser.add_argument(
         "--debug-output-mode",
@@ -269,15 +263,15 @@ def main():
     debug_defaults = get_debug_defaults(output_mode) if (is_debug or debug_shortcut) else None
 
 # ASK gpx file
-    if args.debug_gpx_file:
-        if args.debug_gpx_file == "__AUTO_DEBUG_GPX__":
+    if args.debug_gpx:
+        if args.debug_gpx == "__AUTO_DEBUG_GPX__":
             gpx_file = pick_debug_gpx(None)
         else:
-            gpx_path = Path(args.debug_gpx_file)
+            gpx_path = Path(args.debug_gpx)
             if not (gpx_path.exists() and gpx_path.suffix.lower() == ".gpx"):
-                raise FileNotFoundError(f"Invalid --debug-gpx-file: {args.debug_gpx_file}")
+                raise FileNotFoundError(f"Invalid --debug-gpx: {args.debug_gpx}")
             gpx_file = str(gpx_path)
-        info(f"Input GPX from --debug-gpx-file: {gpx_file}")
+        info(f"Input GPX from --debug-gpx: {gpx_file}")
     elif debug_shortcut:
         gpx_file = pick_debug_gpx(args.debug_gpx)
         info(f"Debug shortcut GPX: {gpx_file}")

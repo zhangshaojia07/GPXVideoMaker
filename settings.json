@@ -10,10 +10,10 @@
     },
     "overall": {
       "style": "vector",
-      "zoom": 15
+      "zoom": 13
     }
   },
-  "FPS": 30,
+  "FPS": 60,
   "track_fail_interval_sec": 180,
   "preview_frame_no": 1
 }
