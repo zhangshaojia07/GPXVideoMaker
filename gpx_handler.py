@@ -17,7 +17,7 @@ def style_line(i, name, km, up, start, end):
     s_fmt = fmt_tim_rich(start)
     e_fmt = fmt_tim_rich(end)
 
-    return f'{num}: {track}  →{dist}  ↑{elev}  {s_fmt} ~ {e_fmt}'
+    return f'{num}: {track}  >{dist}  ^{elev}  {s_fmt} ~ {e_fmt}'
 
 def extract_gpx(gpx_file):
 

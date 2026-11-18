@@ -111,8 +111,8 @@ def show_all_possible(lon: float, lat: float):
         o1_lon, o1_lat = to_other1(src_lon, src_lat)
         o2_lon, o2_lat = to_other2(src_lon, src_lat)
 
-        print(f"  → {name1:6}    {o1_lon:11.6f}, {o1_lat:10.6f}")
-        print(f"  → {name2:6}    {o2_lon:11.6f}, {o2_lat:10.6f}")
+        print(f"  > {name1:6}    {o1_lon:11.6f}, {o1_lat:10.6f}")
+        print(f"  > {name2:6}    {o2_lon:11.6f}, {o2_lat:10.6f}")
         print()
 
 
