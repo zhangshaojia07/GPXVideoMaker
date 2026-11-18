@@ -6,110 +6,107 @@
 ![FFmpeg](https://img.shields.io/badge/dependency-FFmpeg-red?logo=ffmpeg&logoColor=white)
 ![License](https://img.shields.io/github/license/zhangshaojia07/GPXVideoMaker?style=flat)
 
-> 📍 **从 GPX 轨迹到精美视频，只需一步。**
+> 📍 **From GPX track to polished video, in one step.**
 
 ![demo](demo/QingShanLake.gif)
 
-求求各位留下免费的 Star⭐ 谢谢！
+Please leave a free Star⭐ if you find this useful. Thank you!
 
-这是一个使用 [uv](https://github.com/astral-sh/uv) 进行管理的 Python 项目
+This is a Python project managed with [uv](https://github.com/astral-sh/uv).
 
-该项目功能为 GPX 轨迹生成轨迹视频
+It renders GPX tracks into track animation videos.
 
-## ✨ 功能特性
+## ✨ Features
 
-* 📍 GPX 轨迹解析
-* 🎬 FFmpeg 高清渲染
-* 🗺️ 高德地图瓦片支持
-* 🖱️ GUI 文件选择界面
+* 📍 GPX track parsing
+* 🎬 High-definition FFmpeg rendering
+* 🗺️ AMap (Gaode) map tile support
+* 🖱️ GUI file-picker interface
 
-## 📋 前置要求
+## 📋 Prerequisites
 
-本项目依赖 FFmpeg，请自行安装并配置环境变量。
+This project depends on FFmpeg. Please install it and configure the environment variable yourself.
 
-## 🛠 快速开始
+## 🛠 Quick Start
 
-如果你已经安装了 `uv`，只需两步即可运行：
+If you already have `uv` installed, it only takes two steps to run:
 
-1️⃣ **克隆项目并进入目录**:
+1️⃣ **Clone the repository and enter the directory**:
 ```bash
 git clone https://github.com/zhangshaojia07/GPXVideoMaker.git
 cd GPXVideoMaker
 ```
 
-2️⃣ **同步环境并运行**:
+2️⃣ **Sync the environment and run**:
 ```bash
 uv sync
 uv run main.py
 ```
 
-*(该命令会自动创建虚拟环境、安装依赖并执行脚本)*
+*(These commands automatically create a virtual environment, install dependencies, and run the script.)*
 
+## 🐍 Traditional approach (using pip)
 
-## 🐍 传统方式 (使用 pip)
+If you do not have `uv` installed, you can use the traditional `pip` workflow instead:
 
-如果你没有安装 `uv`，也可以使用传统的 `pip` 工作流：
+Click the green **Code** button 👉 **Download ZIP** 👉 extract it to a folder you like.
 
-点击绿色的 **Code** 按钮 👉 **Download ZIP** 👉 解压到你喜欢的文件夹
-
-1️⃣ **创建虚拟环境**:
+1️⃣ **Create a virtual environment**:
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Windows 使用: .venv\Scripts\activate
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 ```
 
-
-2️⃣ **安装依赖**:
+2️⃣ **Install dependencies**:
 ```bash
 pip install -r requirements.txt
 ```
 
-
-3️⃣ **运行**:
+3️⃣ **Run**:
 ```bash
 python main.py
 ```
 
 ## 💡 Tips
 
-如果无法弹出文件选择窗口，请在终端执行 `export GUI=False` (Linux/Mac) 或 `set GUI=False` (Windows)。
+If the file-picker window does not pop up, run `export GUI=False` (Linux/Mac) or `set GUI=False` (Windows) in the terminal.
 
-> 如果不想每次都输入命令，可以直接在 `utils.py` 中找到 `enable_GUI` 硬编码。
+> If you do not want to type the command every time, you can hardcode `enable_GUI` in `utils.py`.
 
-项目 `debug/` 目录下有演示动图的源 GPX 文件，可供测试。
+The source GPX file of the demo animation is available under the `debug/` directory for testing.
 
-地图瓦片来自高德地图。若更换，请注意更改经纬坐标系。
+Map tiles come from AMap (Gaode). If you switch tile providers, remember to adjust the coordinate system accordingly.
 
-## 🤝 贡献与反馈
+## 🤝 Contributing & Feedback
 
-欢迎提交 Issue 或 Pull Request
+Issues and Pull Requests are welcome.
 
 ## ✅ TODO
-- [x] 用户选择长时间无轨迹点渲染方案
-- [x] 用户选择摄像机中心经纬度算法
-  - [x] 跟随模式添加相机笼子模式
-  - [x] 添加切换模式
-    - [ ] 切换时（是/否冻结时间）摄像机EaseInOut移动
-- [x] 预览渲染
-  - [ ] 设置预览参数
-- [x] 修改 README 中的使用教程
-- [ ] 添加“我只需要一个全览图片”模式
-  
-## 🚦 项目流程
+- [x] Let the user choose how to render long stretches without track points
+- [x] Let the user choose the camera center longitude/latitude algorithm
+  - [x] Add camera cage mode for the follow mode
+  - [x] Add the switch mode
+    - [ ] EaseInOut camera movement when switching (freeze time or not)
+- [x] Preview rendering
+  - [ ] Configure preview parameters
+- [x] Update the usage tutorial in the README
+- [ ] Add an "I only need a single overall image" mode
+
+## 🚦 Project Flow
 
 ```mermaid
 graph TD
-    A[读取GPX文件]
-    B[选择输出类型]
-    D[设定地图放缩]
-    E[设定各图层样式]
-    F[设定相机移动方式（视频）]
-    G[选择输出位置]
-    H[渲染]
-    I[输出]
-    J[下载所有地图瓦片]
-    K[渲染预览帧]
-    L[下载预览帧地图瓦片]
+    A[Read GPX file]
+    B[Select output type]
+    D[Set map zoom]
+    E[Set overlay styles]
+    F[Set camera movement mode (video)]
+    G[Select output location]
+    H[Render]
+    I[Output]
+    J[Download all map tiles]
+    K[Render preview frame]
+    L[Download preview-frame map tiles]
     A --> O1
     B --> O1
     O1 --> O2
@@ -126,10 +123,10 @@ graph TD
     H --> I
 ```
 
-## 📜 版权与授权声明
+## 📜 Copyright & License
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Assets: NOTICE](https://img.shields.io/badge/Assets-NOTICE-blue.svg)](NOTICE)
 
-本项目代码采用 **[MIT 协议](LICENSE)** 开源。
-项目涉及的第三方字体及游戏素材版权信息详见 **[版权声明文件 (NOTICE)](NOTICE)**。
+The project code is open-sourced under the **[MIT License](LICENSE)**.
+For third-party font and game asset copyright details, see the **[NOTICE file](NOTICE)**.

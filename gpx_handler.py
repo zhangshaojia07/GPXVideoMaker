@@ -65,7 +65,7 @@ def extract_gpx(gpx_file):
     if len(choices)==1:
         idx = choices[0]
     else:
-        idx = Prompt.ask('选择要导入的 Segment 编号',choices=choices)
+        idx = Prompt.ask('Select the segment number to import', choices=choices)
     idx = idx.split(".")
     
     seg = gpx.tracks[int(idx[0])-1].segments[int(idx[1])-1]

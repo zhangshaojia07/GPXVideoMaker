@@ -8,25 +8,25 @@ class VideoWriter:
         self.output_file = output_file
         self.width, self.height = size
         
-        # FFmpeg命令
+        # FFmpeg command
         self.cmd = [
             'ffmpeg',
-            '-y',  # 覆盖输出文件
-            '-f', 'rawvideo',  # 输入格式：原始视频
-            '-vcodec', 'rawvideo',  # 输入编码：原始视频
-            '-pix_fmt', 'rgb24',  # PIL使用RGB
-            '-s', f'{self.width}x{self.height}',  # 分辨率
-            '-r', str(FPS),  # 帧率
-            '-i', '-',  # 从标准输入读取
-            '-c:v', 'libx264',  # 视频编码器
-            '-preset', 'slow',  # 编码速度预设
-            '-crf', '20',  # 质量参数（0-51，越小质量越好）
-            '-pix_fmt', 'yuv420p',  # 输出像素格式（兼容性更好）
-            '-f', 'mp4',  # 输出格式
+            '-y',  # overwrite the output file
+            '-f', 'rawvideo',  # input format: raw video
+            '-vcodec', 'rawvideo',  # input codec: raw video
+            '-pix_fmt', 'rgb24',  # PIL uses RGB
+            '-s', f'{self.width}x{self.height}',  # resolution
+            '-r', str(FPS),  # frame rate
+            '-i', '-',  # read from stdin
+            '-c:v', 'libx264',  # video codec
+            '-preset', 'slow',  # encoding speed preset
+            '-crf', '20',  # quality parameter (0-51, lower is better)
+            '-pix_fmt', 'yuv420p',  # output pixel format (better compatibility)
+            '-f', 'mp4',  # output format
             self.output_file
         ]
         
-        # 启动进程
+        # Start the process
         self.proc = subprocess.Popen(
             self.cmd,
             stdin=subprocess.PIPE,
@@ -38,50 +38,50 @@ class VideoWriter:
     
     def write(self, frame):
         """
-        写入一帧
-        
+        Write one frame.
+
         Args:
-            frame: numpy数组，RGB格式
+            frame: numpy array in RGB format.
         """
         
-        # 写入到ffmpeg
+        # Write to ffmpeg
         self.proc.stdin.write(frame.tobytes())
         self.frame_count += 1
     
     def release(self):
-        """释放资源"""
+        """Release resources."""
         if self.proc.stdin:
             self.proc.stdin.close()
         
         self.proc.wait()
-        info(f"已保存 {self.frame_count} 帧到 {self.output_file}")
+        info(f"Saved {self.frame_count} frames to {self.output_file}")
 
 from tkinter import filedialog
 if __name__ == "__main__":
     
     output_file = filedialog.asksaveasfilename(
-        title="保存为",
+        title="Save As",
         defaultextension=".mp4",
-        filetypes=[("MP4 文件", "*.mp4")],
+        filetypes=[("MP4 Files", "*.mp4")],
     )
 
-    # 创建写入器
+    # Create the writer
     writer = VideoWriter(output_file, size=(640, 480))
     
-    # 生成100帧
+    # Generate 100 frames
     for i in range(100):
-        # 创建彩色帧
+        # Create a colored frame
         frame = np.zeros((480, 640, 3), dtype=np.uint8)
         
-        # 随时间变化颜色
+        # Change the color over time
         r = int((i / 100) * 255)
         g = int(((100 - i) / 100) * 255)
         b = 128
         
-        frame[:, :] = [r, g, b]  # OpenCV是BGR顺序
+        frame[:, :] = [r, g, b]  # OpenCV uses BGR order
         
-        # 写入帧
+        # Write the frame
         writer.write(frame)
     
-    # 保存
+    # Save
     writer.release()

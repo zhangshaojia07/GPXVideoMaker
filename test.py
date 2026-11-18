@@ -1,6 +1,6 @@
 import math
 
-# ========== 常用常量 ==========
+# ========== Common constants ==========
 PI = 3.1415926535897932384626
 A  = 6378245.0
 EE = 0.00669342162296594323
@@ -38,7 +38,7 @@ def transform_lon(x, y):
     return ret
 
 
-# ========== 核心转换函数 ==========
+# ========== Core conversion functions ==========
 
 def wgs84_to_gcj02(wgs_lon, wgs_lat):
     if out_of_china(wgs_lon, wgs_lat):
@@ -80,21 +80,21 @@ def bd09_to_wgs84(bd_lon, bd_lat):
     return gcj02_to_wgs84(gcj_lon, gcj_lat)
 
 
-# ========== 一键输出所有可能 ==========
+# ========== Output all possibilities in one go ==========
 
 def show_all_possible(lon: float, lat: float):
-    print(f"\n输入坐标: {lon:.8f}, {lat:.8f}")
-    print("以下是假设不同源坐标系后，所有可能的转换结果：\n")
+    print(f"\nInput coordinate: {lon:.8f}, {lat:.8f}")
+    print("The following are all possible conversion results assuming different source coordinate systems:\n")
 
     cases = [
-        ("假设输入是 WGS-84",   lon, lat, wgs84_to_gcj02, wgs84_to_bd09),
-        ("假设输入是 GCJ-02",   lon, lat, gcj02_to_wgs84, gcj02_to_bd09),
-        ("假设输入是 BD-09",    lon, lat, bd09_to_wgs84,  bd09_to_gcj02),
+        ("Assume input is WGS-84", lon, lat, wgs84_to_gcj02, wgs84_to_bd09),
+        ("Assume input is GCJ-02", lon, lat, gcj02_to_wgs84, gcj02_to_bd09),
+        ("Assume input is BD-09",  lon, lat, bd09_to_wgs84,  bd09_to_gcj02),
     ]
 
     for title, src_lon, src_lat, to_other1, to_other2 in cases:
         print(title)
-        print(f"  原坐标       →  {src_lon:11.6f}, {src_lat:10.6f}")
+        print(f"  Original      ->  {src_lon:11.6f}, {src_lat:10.6f}")
         
         if to_other1 == wgs84_to_gcj02 or to_other1 == bd09_to_gcj02:
             name1 = "GCJ-02"
@@ -118,10 +118,10 @@ def show_all_possible(lon: float, lat: float):
 
 if __name__ == "__main__":
     try:
-        lon = float(input("请输入经度 lon: ").strip())
-        lat = float(input("请输入纬度 lat: ").strip())
+        lon = float(input("Enter longitude lon: ").strip())
+        lat = float(input("Enter latitude lat: ").strip())
         show_all_possible(lon, lat)
     except ValueError:
-        print("请输入有效的数字坐标")
+        print("Please enter valid numeric coordinates")
     except KeyboardInterrupt:
-        print("\n已取消")
+        print("\nCancelled")
