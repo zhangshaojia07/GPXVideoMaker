@@ -100,7 +100,7 @@ graph TD
     B[Select output type]
     D[Set map zoom]
     E[Set overlay styles]
-    F[Set camera movement mode (video)]
+    F["Set camera movement mode (video)"]
     G[Select output location]
     H[Render]
     I[Output]
